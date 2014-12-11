@@ -10,7 +10,7 @@ temperatures.
 
 mins and maxs are numpy arrays; threshold is in the same units."""
 
-    # Determine crossing points, as a function of time in the day
+    # Determine crossing points, as a fraction of the day
     plus_over_2 = (mins + maxs)/2
     minus_over_2 = (maxs - mins)/2
     two_pi = 2*np.pi

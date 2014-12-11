@@ -2,21 +2,24 @@
 ### Degree-Days above a given threshold, using daily minimum and
 ### maximum temperatures.
 above.threshold <- function(mins, maxs, threshold) {
-    ## Determine crossing points
-    aboves = mins > threshold
-    belows = maxs < threshold
+    ## Determine crossing points, as a fraction of the day
     plus.over.2 = (mins + maxs)/2
     minus.over.2 = (maxs - mins)/2
     two.pi = 2*pi
+    ## d0s is the times of crossing above; d1s is when cross below
     d0s = arcsin((threshold - plus.over.2) / minus.over.2) / two.pi
     d1s = .5 - d0s
+
+    ## If always above or below threshold, set crossings accordingly
+    aboves = mins > threshold
+    belows = maxs < threshold
 
     d0s[aboves] = 0
     d1s[aboves] = 1
     d0s[belows] = 0
     d1s[belows] = 0
 
-    ## Integral
+    ## Calculate integral
     F1s = -minus.over.2 * cos(2*pi*d1s) / two.pi + plus.over.2 * d1s
     F0s = -minus.over.2 * cos(2*pi*d0s) / two.pi + plus.over.2 * d0s
     return(sum(F1s - F0s - threshold * (d1s - d0s)))
