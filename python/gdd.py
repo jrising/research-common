@@ -32,7 +32,7 @@ mins and maxs are numpy arrays; threshold is in the same units."""
     F0s = -minus_over_2 * np.cos(2*np.pi*d0s) / two_pi + plus_over_2 * d0s
     return np.sum(F1s - F0s - threshold * (d1s - d0s))
 
-def get_gddkdd(gdd_start, kdd_start):
+def get_gddkdd(mins, maxs, gdd_start, kdd_start):
     """Get the Growing Degree-Days, as degree-days between gdd_start and
 kdd_start, and Killing Degree-Days, as the degree-days above
 kdd_start.

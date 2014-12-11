@@ -28,9 +28,9 @@ above.threshold <- function(mins, maxs, threshold) {
 ### Get the Growing Degree-Days, as degree-days between gdd.start and
 ### kdd.start, and Killing Degree-Days, as the degree-days above
 ### kdd.start.
-get.gddkdd <- function(gdd.start, kdd.start) {
-    dd.lowup = above.threshold(tasmin, tasmax, gdd.start)
-    dd.above = above.threshold(tasmin, tasmax, kdd.start)
+get.gddkdd <- function(mins, maxs, gdd.start, kdd.start) {
+    dd.lowup = above.threshold(mins, maxs, gdd.start)
+    dd.above = above.threshold(mins, maxs, kdd.start)
     dd.lower = dd.lowup - dd.above
 
     return(c(dd.lower, dd.above))
