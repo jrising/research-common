@@ -42,9 +42,9 @@ class BinaryGrid:
         return z
 
 class BilBinaryGrid(BinaryGrid):
-    def __init__(self, prefix):
+    def __init__(self, bilfp, prefix):
         with open(os.path.join(prefix + ".blw")) as blwfp:
-            sixex = float(blwfp.next().strip())
+            sizex = float(blwfp.next().strip())
             rot1 = float(blwfp.next().strip())
             rot2 = float(blwfp.next().strip())
             sizey = float(blwfp.next().strip())
@@ -52,6 +52,7 @@ class BilBinaryGrid(BinaryGrid):
             upperleft_y = float(blwfp.next().strip())
 
             assert rot1 == 0 and rot2 == 0, "Rotations are not supported"
+            assert sizey < 0, "Latitude steps currently must be negative"
         
         with open(os.path.join(prefix + ".hdr")) as hdrfp:
             for line in hdrfp:
@@ -61,19 +62,19 @@ class BilBinaryGrid(BinaryGrid):
                 if vals[0] == 'LAYOUT':
                     layout = vals[1]
                 if vals[0] == 'NROWS':
-                    nrows = vals[1]
+                    nrows = int(vals[1])
                 if vals[0] == 'NCOLS':
-                    ncols = vals[1]
+                    ncols = int(vals[1])
                 if vals[0] == 'NBANDS':
-                    nbands = vals[1]
+                    nbands = int(vals[1])
                 if vals[0] == 'NBITS':
-                    nbits = vals[1]
+                    nbits = int(vals[1])
                 if vals[0] == 'BANDROWBYTES':
-                    bandrowbytes = vals[1]
+                    bandrowbytes = int(vals[1])
                 if vals[0] == 'TOTALROWBYTES':
-                    totalrowbytes = vals[1]
+                    totalrowbytes = int(vals[1])
                 if vals[0] == 'BANDGAPBYTES':
-                    bandgapbytes = vals[1]
+                    bandgapbytes = int(vals[1])
 
             if byteorder == 'M':
                 fmt = '>i'
@@ -84,8 +85,7 @@ class BilBinaryGrid(BinaryGrid):
             assert nbands == 1, "Only single band files are supported."
             assert nbits == 32, "Only 32-bit value files are supported."
 
-        bilfp = open(os.path.join(prefix + ".bil"))
-        BinaryGrid.__init__(self, bilfp, upperleft_x, upperleft_y, sizex, sizey, ncols, nrows, nbits / 8, fmt)
+        BinaryGrid.__init__(self, bilfp, upperleft_x, upperleft_y, sizex, -sizey, ncols, nrows, nbits / 8, fmt)
 
 class GlobalBinaryGrid(BinaryGrid):
     def __init__(self, fp, nrows, ncols, bytes, fmt, uneven_cells=False):
