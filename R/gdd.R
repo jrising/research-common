@@ -7,7 +7,7 @@ above.threshold <- function(mins, maxs, threshold) {
     minus.over.2 = (maxs - mins)/2
     two.pi = 2*pi
     ## d0s is the times of crossing above; d1s is when cross below
-    d0s = arcsin((threshold - plus.over.2) / minus.over.2) / two.pi
+    d0s = asin((threshold - plus.over.2) / minus.over.2) / two.pi
     d1s = .5 - d0s
 
     ## If always above or below threshold, set crossings accordingly

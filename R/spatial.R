@@ -15,8 +15,27 @@ prepareEvents <- function(lons, lats, proj.abbr) {
     events
 }
 
-spatialRasterAverage <- function(events, lonlattimeraster, polys) {
-    
+prepareChunkEvents <- function(lons, lats, polys) {
+    inlons <- lons >= min(polys$X) & lons <= max(polys$X)
+    inlats <- lats >= min(polys$Y) & lats <= max(polys$Y)
+
+    pts <- expand.grid(x=lons[inlons], y=lats[inlats])
+    events <- data.frame(EID=1:nrow(pts), X=pts$x, Y=pts$y)
+    events <- as.EventData(events, projection=attributes(polys)$projection)
+
+    ## Add rows and columns
+    events$row <- NA
+    for (ii in which(inlats))
+        events$row[events$Y == lats[ii]] <- ii
+        
+    events$col <- NA
+    for (ii in which(inlons))
+        events$col[events$X == lons[ii]] <- ii
+
+    events    
+}
+
+oneOrMoreEventsWithin <- function(events, polys) {
     eids <- findPolys(events, polys, maxRows=6e5)$EID
 
     if (length(eids) == 0) {
@@ -28,10 +47,20 @@ spatialRasterAverage <- function(events, lonlattimeraster, polys) {
         eids <- which.min(dists)
     }
 
+    eids
+}
+
+get.as.indexed <- function(grid, rows, cols) {
+    grid[(cols - 1) * nrow(grid) + rows]
+}
+
+spaceTimeRasterAverage <- function(events, lonlattimeraster, polys) {
+    eids <- oneOrMoreEventsWithin(events, polys)
+    
     numtimes <- dim(lonlattimeraster)[3]
     averages <- rep(NA, numtimes)
     for (tt in 1:numtimes)
-        averages[tt] <- mean(lonlattimeraster[events$col[eids], events$row[eids], tt])
+        averages[tt] <- mean(get.as.indexed(lonlattimeraster[, , tt], events$col[eids], events$row[eids]))
 
     averages
 }
