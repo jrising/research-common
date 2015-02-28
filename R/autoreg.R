@@ -52,11 +52,9 @@ autoreg <- function(yy, preds, groups, times, include.intercept=T, iterations=10
     predsa <- delay.data(preds, groups, times) - alpha * preds
 
     formula <- make.formula("yya", predsa, include.intercept)
+    predsa$yya <- yya
     mod <- lm(formula, data=predsa)
   }
 
   return(mod$coeff / (1 - alpha))
 }
-
-  
-  
