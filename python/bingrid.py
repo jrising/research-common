@@ -1,14 +1,11 @@
+from spacegrid import SpatialGrid
 import struct, math, os
 
-class BinaryGrid:
+class BinaryGrid(SpatialGrid):
     def __init__(self, fp, x0_corner, y0_corner, sizex, sizey, ncols, nrows, bytes, fmt):
+        super(BinaryGrid, self).__init__(x0_corner, y0_corner, sizex, sizey, ncols, nrows)
+
         self.fp = fp
-        self.y0_corner = y0_corner
-        self.x0_corner = x0_corner
-        self.sizex = sizex
-        self.sizey = sizey
-        self.ncols = ncols
-        self.nrows = nrows
         self.bytes = bytes
         self.fmt = fmt
         
@@ -37,6 +34,8 @@ class BinaryGrid:
         value = self.fp.read(self.bytes)
 
         # unpack binary data into a flat tuple z
+        if value == '':
+            return [float('nan')]
         z = struct.unpack(self.fmt, value)
 
         return z
@@ -85,7 +84,7 @@ class BilBinaryGrid(BinaryGrid):
             assert nbands == 1, "Only single band files are supported."
             assert nbits == 32, "Only 32-bit value files are supported."
 
-        BinaryGrid.__init__(self, bilfp, upperleft_x, upperleft_y, sizex, -sizey, ncols, nrows, nbits / 8, fmt)
+        super(BilBinaryGrid, self).__init__(bilfp, upperleft_x, upperleft_y, sizex, -sizey, ncols, nrows, nbits / 8, fmt)
 
 class GlobalBinaryGrid(BinaryGrid):
     def __init__(self, fp, nrows, ncols, bytes, fmt, uneven_cells=False):
@@ -94,4 +93,4 @@ class GlobalBinaryGrid(BinaryGrid):
         if not uneven_cells:
             assert ncols > nrows, "Fewer columns than rows, without uneven_cells set."
 
-        BinaryGrid.__init__(self, fp, -180, 90, sizex, sizey, ncols, nrows, bytes, fmt)
+        super(GlobalBinaryGrid, self).__init__(fp, -180, 90, sizex, sizey, ncols, nrows, bytes, fmt)
