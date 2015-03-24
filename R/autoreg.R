@@ -39,7 +39,9 @@ delay.data <- function(data, groups, times) {
 
 autoreg <- function(yy, preds, groups, times, include.intercept=T, iterations=10) {
   formula <- make.formula("yy", preds, include.intercept)
-  mod <- lm(formula, data=preds)
+  mypreds <- preds
+  mypreds$yy <- yy
+  mod <- lm(formula, data=mypreds)
 
   for (ii in 1:iterations) {
     error <- mod$residuals
