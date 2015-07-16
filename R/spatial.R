@@ -1,3 +1,5 @@
+## Requires source("distance.R")
+
 prepareEvents <- function(lons, lats, proj.abbr) {
     pts <- expand.grid(x=lons, y=lats)
     events <- data.frame(EID=1:nrow(pts), X=pts$x, Y=pts$y)
@@ -7,7 +9,7 @@ prepareEvents <- function(lons, lats, proj.abbr) {
     events$row <- NA
     for (ii in 1:length(lats))
         events$row[events$Y == lats[ii]] <- ii
-        
+
     events$col <- NA
     for (ii in 1:length(lons))
         events$col[events$X == lons[ii]] <- ii
@@ -27,12 +29,17 @@ prepareChunkEvents <- function(lons, lats, polys) {
     events$row <- NA
     for (ii in which(inlats))
         events$row[events$Y == lats[ii]] <- ii
-        
+
     events$col <- NA
     for (ii in which(inlons))
         events$col[events$X == lons[ii]] <- ii
 
-    events    
+    events
+}
+
+getClosest <- function(one.lon, one.lat, many.lon, many.lat) {
+    dists <- gcd.slc(one.lon, one.lat, many.lon, many.lat)
+    which.min(dists)
 }
 
 oneOrMoreEventsWithin <- function(events, polys) {
@@ -42,9 +49,7 @@ oneOrMoreEventsWithin <- function(events, polys) {
         centroid <- calcCentroid(polys, rollup=1)
 
         ## Consider all points in grid
-        dists <- sqrt((events$X - centroid$X)^2 + (events$Y - centroid$Y)^2)
-
-        eids <- which.min(dists)
+        eids <- getClosest(centroid$X, centroid$Y, events$X, events$Y)
     }
 
     eids
@@ -56,11 +61,36 @@ get.as.indexed <- function(grid, rows, cols) {
 
 spaceTimeRasterAverage <- function(events, lonlattimeraster, polys) {
     eids <- oneOrMoreEventsWithin(events, polys)
-    
+
+    ## Iterate through all times
     numtimes <- dim(lonlattimeraster)[3]
     averages <- rep(NA, numtimes)
     for (tt in 1:numtimes)
         averages[tt] <- mean(get.as.indexed(lonlattimeraster[, , tt], events$col[eids], events$row[eids]))
+
+    averages
+}
+
+transformToIndex <- function(from.range.values, to.range) {
+    ## Assumes that to.range is in increasing order and approximately evenly spaced
+    indices <- round(length(to.range) * (from.range.values - to.range[1]) / (to.range[length(to.range)] - to.range[1])) + 1
+    indices[indices < 1] <- NA
+    indices[indices > length(to.range)] <- NA
+    indices
+}
+
+spaceTimeWeightedRasterAverage <- function(events, lonlattimeraster, polys, weights, weights.lon, weights.lat) {
+    ## Identify the points within the polygon
+    eids <- oneOrMoreEventsWithin(events, polys)
+
+    ## Weigh each point by its closest available weight
+    eid.weights <- get.as.indexed(weights, transformToIndex(events$X[eids], weights.lon), transformToIndex(events$Y[eids], weights.lat))
+
+    ## Iterate through all times
+    numtimes <- dim(lonlattimeraster)[3]
+    averages <- rep(NA, numtimes)
+    for (tt in 1:numtimes)
+        averages[tt] <- weighted.mean(get.as.indexed(lonlattimeraster[, , tt], events$col[eids], events$row[eids]), eid.weights)
 
     averages
 }
@@ -78,7 +108,7 @@ spatialIntegral <- function(density, polys) {
     lons <- seq(-179.75, 179.75, by=.5)
     lats <- seq(-89.75, 89.75, by=.5)
     pts <- expand.grid(x=lons, y=lats)
-    
+
     dists <- sqrt((pts$x - centroid$X)^2 + (pts$y - centroid$Y)^2)
     closest <- which.min(dists)[1]
     matching = pts$x[closest] == events$X & pts$y[closest] == events$Y
@@ -87,7 +117,7 @@ spatialIntegral <- function(density, polys) {
     else
       return(0)
   }
-  
+
   return(sum(density$Overall.Probability[eids]))
 }
 

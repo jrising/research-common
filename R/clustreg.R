@@ -13,7 +13,7 @@ get.coef.clust <- function(mod, cluster, var=NA) {
 
   not <- attr(mod$model,"na.action")
   if (!is.null(not)) {
-    cluster <- cluster[-not]
+    cluster <- as.factor(as.character(cluster[-not]))
   }
 
   M <- length(unique(cluster))
