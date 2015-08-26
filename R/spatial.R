@@ -42,6 +42,16 @@ getClosest <- function(one.lon, one.lat, many.lon, many.lat) {
     which.min(dists)
 }
 
+get.closest.indices <- function(master.lon, master.lat, many.lon, many.lat) {
+    indexes <- c()
+    for (ii in 1:length(master.lon)) {
+        dists <- gcd.slc(master.lon[ii], master.lat[ii], many.lon, many.lat)
+        indexes <- c(indexes, which.min(dists))
+    }
+
+    indexes
+}
+
 oneOrMoreEventsWithin <- function(events, polys) {
     eids <- findPolys(events, polys, maxRows=6e5)$EID
 
@@ -57,6 +67,10 @@ oneOrMoreEventsWithin <- function(events, polys) {
 
 get.as.indexed <- function(grid, rows, cols) {
     grid[(cols - 1) * nrow(grid) + rows]
+}
+
+get.index <- function(grid, rows, cols) {
+    (cols - 1) * nrow(grid) + rows
 }
 
 spaceTimeRasterAverage <- function(events, lonlattimeraster, polys) {
@@ -85,17 +99,21 @@ spaceTimeWeightedRasterAverage <- function(events, lonlattimeraster, polys, weig
 
     ## Weigh each point by its closest available weight
     eid.weights <- get.as.indexed(weights, transformToIndex(events$X[eids], weights.lon), transformToIndex(events$Y[eids], weights.lat))
+    valid.weights <- !is.na(eid.weights)
+
+    eids <- eids[valid.weights]
+    eid.weights <- eid.weights[valid.weights]
 
     ## Iterate through all times
     numtimes <- dim(lonlattimeraster)[3]
     averages <- rep(NA, numtimes)
     for (tt in 1:numtimes)
-        averages[tt] <- weighted.mean(get.as.indexed(lonlattimeraster[, , tt], events$col[eids], events$row[eids]), eid.weights)
+        averages[tt] <- weighted.mean(get.as.indexed(lonlattimeraster[, , tt], events$col[eids], events$row[eids]), eid.weights, na.rm=T)
 
     averages
 }
 
-spatialIntegral <- function(density, polys) {
+spatialIntegral.old <- function(density, polys) {
   events <- data.frame(EID=1:nrow(density), X=density$Center.Long, Y=density$Center.Lat)
   events <- as.EventData(events, projection=proj.abbr)
 
@@ -121,3 +139,7 @@ spatialIntegral <- function(density, polys) {
   return(sum(density$Overall.Probability[eids]))
 }
 
+spatialIntegral <- function(events, density, polys) {
+    eids <- oneOrMoreEventsWithin(events, polys)
+    sum(get.as.indexed(density, events$row[eids], events$col[eids]))
+}
