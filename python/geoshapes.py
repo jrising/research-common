@@ -4,6 +4,7 @@ import shapefile
 from shapely.geometry import Polygon, MultiPolygon, Point
 
 def shape2parts(shape):
+    """Takes a shapefile shape and return a list of lists of points, for each defined part."""
     parts = []
     start_indexes = shape.parts
     prev_start_index = 0
@@ -15,6 +16,7 @@ def shape2parts(shape):
     return parts
 
 def shape2multi(shape):
+    """Takes a shapefile shape and returns a MultiPolygon."""
     parts = shape2parts(shape)
     polygons = []
     for part in parts:
@@ -28,6 +30,7 @@ def shape2multi(shape):
 ## After all are written, save it:
 # writer.save('output/australia')
 def write_polys(writer, polygon, attribs=None):
+    """Writes a MultiPolygon to the given shapefile writer."""
     if type(polygon) is Polygon:
         writer.poly(shapeType=shapefile.POLYGON, parts=[polygon.exterior.coords])
         if attribs is not None:
@@ -36,12 +39,6 @@ def write_polys(writer, polygon, attribs=None):
         writer.poly(shapeType=shapefile.POLYGON, parts=[geom.exterior.coords for geom in polygon.geoms])
         if attribs is not None:
             writer.record(*attribs)
-        return
-        # Delete below, if above works!
-        for geom in polygon.geoms:
-            writer.poly(shapeType=shapefile.POLYGON, parts=[geom.exterior.coords])
-            if attribs is not None:
-                writer.record(*attribs)
 
 def gcd_slc(long0, lat0, longs, lats):
     R = 6371 # Earth mean radius [km]
