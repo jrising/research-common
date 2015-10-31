@@ -1,5 +1,5 @@
-import sys
-sys.path.append("..")
+import sys, os
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 import numpy as np
 import shapefile
@@ -107,15 +107,42 @@ def splitworlds(fieldnames, recordshapes, seam_longitude):
 
     return rightoldworlds, leftoldworlds, newworlds, hawaiis
 
-def extreme_longitudes(polydict):
+def extreme_longitudes(polydict, latmin=-30, latmax=30):
     minlon = np.inf
     maxlon = -np.inf
-    for polygon in polydict.values():
-        minlon = min(minlon, polygon.bounds[0])
-        maxlon = max(maxlon, polygon.bounds[2])
 
+    if latmin == -30 and latmax == 30:
+        for polygon in polydict.values():
+            minlon = min(minlon, polygon.bounds[0])
+            maxlon = max(maxlon, polygon.bounds[2])
+    else:
+        for multi in polydict.values():
+            if multi.bounds[1] > latmax or multi.bounds[3] < latmin:
+                continue
+            for polygon in geoshapes.polygons(multi):
+                if polygon.bounds[1] > latmax or polygon.bounds[3] < latmin:
+                    continue
+                alllon = [point[0] for point in polygon.exterior.coords if point[1] >= latmin and point[1] <= latmax and np.isfinite(point[0])]
+                if len(alllon) == 0:
+                    continue
+                minlon = min(minlon, min(alllon))
+                maxlon = max(maxlon, max(alllon))
+                
     return minlon, maxlon
 
+def minimum_longitude_gap(polydict1, polydict2):
+    # Take the 
+    mingap = np.inf
+    for latitude in range(-30, 30):
+        leftmin, leftmax = extreme_longitudes(polydict1, latitude, latitude+1)
+        rightmin, rightmax = extreme_longitudes(polydict2, latitude, latitude+1)
+
+        mingap = min(mingap, rightmin - leftmax)
+        #if rightmin - leftmax == mingap:
+        #    print rightmin, leftmax
+        
+    return mingap
+    
 def shift_all(polydict, dlon):
     shifted = {}
     for ii in polydict:
@@ -124,16 +151,24 @@ def shift_all(polydict, dlon):
     return shifted
 
 def all_polygons(polydicts, index):
-    polygons = [polydict[ii] for polydict in polydicts if index in polydict]
+    polygons = [polydict[index] for polydict in polydicts if index in polydict]
+    polygons = filter(lambda polygon: not isinstance(polygon, geometry.Point), polygons)
+
     if len(polygons) == 0:
         return None
     if len(polygons) == 1:
         return polygons[0]
-
+    if len(polygons) == 2:
+        return polygons[0].union(polygons[1])    
+    
     return ops.cascaded_union(polygons)
 
 if __name__ == '__main__':
     import sys
+    if len(sys.argv) < 2:
+        print "Please provide input shapefile and output shapefile path."
+        exit()
+
     # Path to the shapefile to read in
     # Must by in longitude, latitude
     input_shapefile = sys.argv[1]
@@ -146,14 +181,23 @@ if __name__ == '__main__':
     rightoldworlds, leftoldworlds, newworlds, hawaiis = splitworlds(fieldnames, recordshapes, MAP_SEAM_LONGITUDE)
 
     # Decide where to shift everything
-    rightoldwest, rightoldeast = extreme_longitudes(rightoldworlds)
-    leftoldwest, leftoldeast = extreme_longitudes(leftoldworlds)
-    newwest, neweast = extreme_longitudes(newworlds)
-    hawaiieast, hawaiiwest = extreme_longitudes(hawaiis)
+    if False:
+        rightoldwest, rightoldeast = extreme_longitudes(rightoldworlds)
+        leftoldwest, leftoldeast = extreme_longitudes(leftoldworlds)
+        newwest, neweast = extreme_longitudes(newworlds)
+        hawaiieast, hawaiiwest = extreme_longitudes(hawaiis)
 
-    newworlds = shift_all(newworlds, rightoldwest - neweast - NEW_OLD_SPACING)
-    leftoldsworlds = shift_all(leftoldworlds, newwest - leftoldeast - OLD_NEW_SPACING + (rightoldwest - neweast - NEW_OLD_SPACING))
-    hawaiis = shift_all(hawaiis, newwest - hawaiieast - HAWAII_NEW_SPACING)
+        newworlds = shift_all(newworlds, rightoldwest - neweast - NEW_OLD_SPACING)
+        leftoldsworlds = shift_all(leftoldworlds, newwest - leftoldeast - OLD_NEW_SPACING + (rightoldwest - neweast - NEW_OLD_SPACING))
+        hawaiis = shift_all(hawaiis, newwest - hawaiieast - HAWAII_NEW_SPACING)
+    else:
+        new_old = minimum_longitude_gap(newworlds, rightoldworlds)
+        #print new_old
+        newworlds = shift_all(newworlds, new_old - NEW_OLD_SPACING)
+        old_new = minimum_longitude_gap(leftoldworlds, newworlds)
+        #print old_new
+        leftoldworlds = shift_all(leftoldworlds, old_new - OLD_NEW_SPACING)
+        hawaiis = shift_all(hawaiis, minimum_longitude_gap(hawaiis, newworlds) - HAWAII_NEW_SPACING)
 
     allpolydicts = [rightoldworlds, leftoldworlds, newworlds, hawaiis]
 
