@@ -24,6 +24,14 @@ def shape2multi(shape):
 
     return MultiPolygon(polygons)
 
+def polygons(polyshape):
+    """Pass either a Polygon or a MultiPolygon, and it will give the elements."""
+    if isinstance(polyshape, Polygon):
+        yield polyshape
+    elif isinstance(polyshape, MultiPolygon):
+        for geom in polyshape.geoms:
+            yield geom
+
 ## To use, first writer as:
 # writer = shapefile.Writer(shapefile.POLYGON)
 # writer.autoBalance = 1
@@ -31,11 +39,11 @@ def shape2multi(shape):
 # writer.save('output/australia')
 def write_polys(writer, polygon, attribs=None):
     """Writes a MultiPolygon to the given shapefile writer."""
-    if type(polygon) is Polygon:
+    if isinstance(polygon, Polygon):
         writer.poly(shapeType=shapefile.POLYGON, parts=[polygon.exterior.coords])
         if attribs is not None:
             writer.record(*attribs)
-    else:
+    elif isinstance(polygon, MultiPolygon):
         writer.poly(shapeType=shapefile.POLYGON, parts=[geom.exterior.coords for geom in polygon.geoms])
         if attribs is not None:
             writer.record(*attribs)
