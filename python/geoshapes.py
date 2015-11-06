@@ -1,7 +1,7 @@
 import numpy as np
 
 import shapefile
-from shapely.geometry import Polygon, MultiPolygon, Point
+from shapely.geometry import Polygon, MultiPolygon, Point, GeometryCollection
 
 def shape2parts(shape):
     """Takes a shapefile shape and return a list of lists of points, for each defined part."""
@@ -43,8 +43,8 @@ def write_polys(writer, polygon, attribs=None):
         writer.poly(shapeType=shapefile.POLYGON, parts=[polygon.exterior.coords])
         if attribs is not None:
             writer.record(*attribs)
-    elif isinstance(polygon, MultiPolygon):
-        writer.poly(shapeType=shapefile.POLYGON, parts=[geom.exterior.coords for geom in polygon.geoms])
+    elif isinstance(polygon, MultiPolygon) or isinstance(polygon, GeometryCollection):
+        writer.poly(shapeType=shapefile.POLYGON, parts=[geom.exterior.coords for geom in polygon.geoms if isinstance(geom, Polygon)])
         if attribs is not None:
             writer.record(*attribs)
 

@@ -2,26 +2,33 @@ import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 import numpy as np
-import shapefile
+import shapefile, csv
 from shapely import geometry, affinity, ops
-import geoshapes, lib
+import geoshapes
 
 # Record information, used to extract Hawaii
+CHECK_HAWAII_IN_RECORD = False # If false, only uses HAWAII_BOX
 SHAPEFILE_REGION_FIELD = "name"
 SHAPEFILE_HAWAII_REGION = "United States"
+# Rectangle containing Hawaii
+HAWAII_REGION = geometry.box(-165, 15, -150, 25)
 
-# Path to the shapefile to write out
-OUTPUT_SHAPEFILE = "tropict"
+# Regions to drop (small islands)
+DROP_REGIONS = [
+    geometry.box(-16, -17, -4, -7), # Small Atlantic Islands
+    #geometry.box(-169, -30, -95, 0), # Pacific Islands east of American Somoa
+    geometry.box(-179, -30, -95, 0), # Pacific Islands east of Fiji
+    geometry.box(-160, 1, -156, 5), # A couple more Pacific Islands
+    geometry.box(160, -3, 180, 13), # And more
+    geometry.box(141, 26, 143, 27)
+]
 
 # Longitudinal configuration of the map
-MAP_SEAM_LONGITUDE = 100 # Location of the wrapping seam on the map
+MAP_SEAM_LONGITUDE = 65 # Location of the wrapping seam on the map
 # The spacings are between bounding boxes, so negative values allow the continents to nestle into each other.
-NEW_OLD_SPACING = 10 # Spacing between the east of the new world and the west of the old world in degrees longitude
-OLD_NEW_SPACING = 10 # Spacing between the west of the new world and the east of the old world in degrees longitude
+NEW_OLD_SPACING = 5 # Spacing between the east of the new world and the west of the old world in degrees longitude
+OLD_NEW_SPACING = 5 # Spacing between the west of the new world and the east of the old world in degrees longitude
 HAWAII_NEW_SPACING = 10 # Spacing between the west of the new world and the east of Hawaii in degrees longitude
-
-# Rectangle containing Hawaii
-HAWAII_BOX = geometry.box(-165, 15, -150, 25)
 
 def load_shapefile(shapepath):
     """Returns the field names, field types, and list of tuples of (record, shape), as returned by shapefile.Reader."""
@@ -38,12 +45,21 @@ def load_shapefile(shapepath):
 
     return fieldnames, fieldtypes, recordshapes
 
+def in_newworld(lon, lat):
+    """Return True if this point is part of the New World continent."""
+    assert lat <= 30 and lat >= -30
+    return (lon < -50 and lon > -120) if lat >= 10 else (lon < -30 and lon > -100)
+
 def splitworlds_shape(shape, seam_longitude):
     """Returns three MultiPolygons: western old world, eastern old world, and new world."""
 
     # Construct MultiPolygon to perform intersections
     multi = geoshapes.shape2multi(shape).buffer(0)
     multi = multi.intersection(geometry.box(multi.bounds[0], -30, multi.bounds[2], 30))
+
+    # Drop the drop boxes
+    for region in DROP_REGIONS:
+        multi = multi.difference(region)
 
     # Pull out the list, in case it wasn't a list
     geoms = [poly for poly in geoshapes.polygons(multi)]
@@ -89,13 +105,19 @@ def splitworlds(fieldnames, recordshapes, seam_longitude):
         rightoldworld, leftoldworld, newworld = splitworlds_shape(shape, seam_longitude)
 
         # Do we need to remove Hawaii?
-        if record[fieldnames.index(SHAPEFILE_REGION_FIELD)] == SHAPEFILE_HAWAII_REGION:
-            # Combine both sides, in case seam runs through Hawaii
-            hawaii = rightoldworld.intersection(HAWAII_BOX).union(leftoldworld.intersection(HAWAII_BOX))
-            rightoldworld = rightoldworld.difference(HAWAII_BOX)
-            leftoldworld = leftoldworld.difference(HAWAII_BOX)
+        if CHECK_HAWAII_IN_RECORD:
+            if record[fieldnames.index(SHAPEFILE_REGION_FIELD)] == SHAPEFILE_HAWAII_REGION:
+                # Combine both sides, in case seam runs through Hawaii
+                hawaii = rightoldworld.intersection(HAWAII_REGION).union(leftoldworld.intersection(HAWAII_REGION))
+                rightoldworld = rightoldworld.difference(HAWAII_REGION)
+                leftoldworld = leftoldworld.difference(HAWAII_REGION)
 
-            hawaiis[ii] = hawaii
+                hawaiis[ii] = hawaii
+            elif HAWAII_REGION.intersects(leftoldworld):
+                hawaii = leftoldworld.intersection(HAWAII_REGION)
+                leftoldworld = leftoldworld.difference(HAWAII_REGION)
+
+                hawaiis[ii] = hawaii
 
         # Add any non-empty polygons to our lists
         if not rightoldworld.is_empty:
@@ -127,11 +149,11 @@ def extreme_longitudes(polydict, latmin=-30, latmax=30):
                     continue
                 minlon = min(minlon, min(alllon))
                 maxlon = max(maxlon, max(alllon))
-                
+
     return minlon, maxlon
 
 def minimum_longitude_gap(polydict1, polydict2):
-    # Take the 
+    # Take the
     mingap = np.inf
     for latitude in range(-30, 30):
         leftmin, leftmax = extreme_longitudes(polydict1, latitude, latitude+1)
@@ -140,9 +162,9 @@ def minimum_longitude_gap(polydict1, polydict2):
         mingap = min(mingap, rightmin - leftmax)
         #if rightmin - leftmax == mingap:
         #    print rightmin, leftmax
-        
+
     return mingap
-    
+
 def shift_all(polydict, dlon):
     shifted = {}
     for ii in polydict:
@@ -159,8 +181,8 @@ def all_polygons(polydicts, index):
     if len(polygons) == 1:
         return polygons[0]
     if len(polygons) == 2:
-        return polygons[0].union(polygons[1])    
-    
+        return polygons[0].union(polygons[1])
+
     return ops.cascaded_union(polygons)
 
 if __name__ == '__main__':
@@ -181,23 +203,14 @@ if __name__ == '__main__':
     rightoldworlds, leftoldworlds, newworlds, hawaiis = splitworlds(fieldnames, recordshapes, MAP_SEAM_LONGITUDE)
 
     # Decide where to shift everything
-    if False:
-        rightoldwest, rightoldeast = extreme_longitudes(rightoldworlds)
-        leftoldwest, leftoldeast = extreme_longitudes(leftoldworlds)
-        newwest, neweast = extreme_longitudes(newworlds)
-        hawaiieast, hawaiiwest = extreme_longitudes(hawaiis)
-
-        newworlds = shift_all(newworlds, rightoldwest - neweast - NEW_OLD_SPACING)
-        leftoldsworlds = shift_all(leftoldworlds, newwest - leftoldeast - OLD_NEW_SPACING + (rightoldwest - neweast - NEW_OLD_SPACING))
-        hawaiis = shift_all(hawaiis, newwest - hawaiieast - HAWAII_NEW_SPACING)
-    else:
-        new_old = minimum_longitude_gap(newworlds, rightoldworlds)
-        #print new_old
-        newworlds = shift_all(newworlds, new_old - NEW_OLD_SPACING)
-        old_new = minimum_longitude_gap(leftoldworlds, newworlds)
-        #print old_new
-        leftoldworlds = shift_all(leftoldworlds, old_new - OLD_NEW_SPACING)
-        hawaiis = shift_all(hawaiis, minimum_longitude_gap(hawaiis, newworlds) - HAWAII_NEW_SPACING)
+    new_old = minimum_longitude_gap(newworlds, rightoldworlds)
+    newworlds = shift_all(newworlds, new_old - NEW_OLD_SPACING)
+    old_new = minimum_longitude_gap(leftoldworlds, newworlds)
+    print old_new
+    leftoldworlds = shift_all(leftoldworlds, old_new - OLD_NEW_SPACING)
+    hawaii_new = minimum_longitude_gap(hawaiis, newworlds)
+    print hawaii_new
+    hawaiis = shift_all(hawaiis, hawaii_new - HAWAII_NEW_SPACING)
 
     allpolydicts = [rightoldworlds, leftoldworlds, newworlds, hawaiis]
 
@@ -213,3 +226,11 @@ if __name__ == '__main__':
             geoshapes.write_polys(writer, polygons, recordshapes[ii][0])
 
     writer.save(output_shapefile)
+
+    with open(output_shapefile + '.tsr', 'w') as tsrout:
+        writer = csv.writer(tsrout)
+        writer.writerow(["region", "shift"])
+        writer.writerow(["newworld", new_old - NEW_OLD_SPACING])
+        writer.writerow(["leftoldworld", old_new - OLD_NEW_SPACING])
+        writer.writerow(["hawaii", hawaii_new - HAWAII_NEW_SPACING])
+

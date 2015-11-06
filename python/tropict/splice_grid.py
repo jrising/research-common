@@ -1,12 +1,15 @@
 import sys
 import numpy as np
 
-scalex = .64  # arbitrary
+scalex = .64  # without vertical stretching height / (2079 / scalex) = 60 / 360
 
 def ntoend(p0):
     return 2079 * (1 - p0) / (scalex + .001)
 
-def extract_image(original, row, p0, length, makeblank):
+# allow blue for oceans
+overwritable_colors = [[0, 0, 255]] # also white, implicitly
+
+def extract_image(original, row, p0, length):
     p1 = p0 + scalex * length / 2079.
     if p1 > 1:
         part = extract_image(original, row, p0, ntoend(p0))
@@ -27,6 +30,8 @@ def copyover_image(result, ii, o0, o1, values):
     span = range(result.shape[1])
     span = span[o0:o1]
     blanks = (result[ii, span, 0] == 255) & (result[ii, span, 1] == 255) & (result[ii, span, 2] == 255)
+    for color in overwritable_colors:
+        blanks = blanks | ((result[ii, span, 0] == color[0]) & (result[ii, span, 1] == color[1]) & (result[ii, span, 2] == color[2]))
     result[ii, np.array(span)[blanks], :] = values[blanks, :]
 
 def convert_image(pathin, pathout):
@@ -56,12 +61,14 @@ def convert_image(pathin, pathout):
         result[ii, o1, :] = [0, 0, 0, 255]
 
         # Around Hawaii
+        if ii >= 65 and ii <= 95:
+            result[ii, 725, :] = [0, 0, 0, 255]
         if ii == 190 or ii == 95:
-            for jj in range(585, 680):
+            for jj in range(625, 725):
                 result[ii, jj, :] = [0, 0, 0, 255]
         if ii >= 95 and ii <= 190:
-            result[ii, 585, :] = [0, 0, 0, 255]
-            result[ii, 680, :] = [0, 0, 0, 255]
+            result[ii, 625, :] = [0, 0, 0, 255]
+            result[ii, 725, :] = [0, 0, 0, 255]
 
     oup = Image.fromarray(result, 'RGBA')
     oup.save(pathout)
@@ -100,6 +107,7 @@ def convert_ncdf(pathin, pathout):
 
     # Copy variables
     for v_name, varin in dsin.variables.iteritems():
+        print v_name
         dimensions = list(varin.dimensions)
         for ii in range(len(dimensions)):
             if dimensions[ii].lower() == 'latitude' or dimensions[ii].lower() == 'lat':
@@ -122,6 +130,7 @@ def convert_ncdf(pathin, pathout):
             if len(dimensions) == 2 and dimensions[0] == 'y' and dimensions[1] == 'x':
                 result = outVar[:]
                 result.mask = np.ma.nomask
+                result[:] = np.nan
                 convert(varin[::-1, :], result, extract_ncdf, dropinitialhori_ncdf, copyover_ncdf)
                 outVar[:] = result[::-1, :]
             elif len(dimensions) == 2 and dimensions[0] == 'x' and dimensions[1] == 'y':
@@ -157,8 +166,8 @@ def convert(data, result, extract, dropinitialhori, copyover):
 
         if ii < 200:
             # Hawaii
-            o0 = 590
-            o1 = 680
+            o0 = 630
+            o1 = 720
             copyover(result, ii, o0, o1, extract(data, row, .05, o1 - o0))
 
         # Africa
