@@ -1,0 +1,6 @@
+numpy
+scipy
+shapefile
+shapely
+Pillow
+netCDF4
