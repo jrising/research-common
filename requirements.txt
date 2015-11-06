@@ -1,6 +1,6 @@
 numpy
 scipy
-shapefile
+pyshp
 shapely
 Pillow
 netCDF4
