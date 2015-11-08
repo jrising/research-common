@@ -4,8 +4,14 @@ python:
 # command to install dependencies
 virtualenv:
   system_site_packages: true
+sudo: false
 before_install:
- - sudo apt-get install -qq python-numpy python-scipy
+addons:
+  apt:
+    sources:
+    - python-numpy
+    - python-scipy
+    - libhdf5-serial-dev
 install: "pip install -r requirements.txt"
 
 # Run tests
