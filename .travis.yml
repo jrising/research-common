@@ -1,20 +1,15 @@
 language: python
 python:
   - "2.7"
+
 # command to install dependencies
 virtualenv:
   system_site_packages: true
-sudo: false
-before_install:
-addons:
-  apt:
-    sources:
-    - python-numpy
-    - python-scipy
-    - libhdf5-7
-    - libhdf5-dev
-    - libhdf5-serial-dev
-install: "pip install -r requirements.txt"
+
+install:
+ - sudo apt-get update -qq
+ - sudo apt-get install -qq libhdf5-serial-dev
+ - pip install -r requirements.txt
 
 # Run tests
 script:
