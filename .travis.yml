@@ -6,10 +6,16 @@ python:
 virtualenv:
   system_site_packages: true
 
+sudo: false
+
+addons:
+  apt:
+    packages:
+      - libhdf5-serial-dev
+      - netcdf-bin
+      - libnetcdf-dev
+
 install:
- - sudo apt-get update -qq
- - sudo apt-get install -qq libhdf5-serial-dev
- - sudo apt-get install python-netcdf
  - pip install -r requirements.txt
 
 # Run tests
