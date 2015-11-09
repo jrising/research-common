@@ -14,6 +14,10 @@ addons:
       - libhdf5-serial-dev
       - netcdf-bin
       - libnetcdf-dev
+      - libblas-dev
+      - liblapack-dev
+      - libatlas-base-dev
+      - gfortran
 
 install:
  - pip install -r requirements.txt
