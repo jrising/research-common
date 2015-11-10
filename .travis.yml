@@ -25,6 +25,10 @@ install:
 # Run tests
 script:
  - ./tropict/examples/process_ncdf.sh
+ - ls
+ - ls tropict
+ - ls tropict/examples
+ - ls tropict/examples/subjects
  - cmp tropict/examples/bio-2b.nc4 tropict/examples/subjects/bio-2b.nc4
  - ./tropict/examples/process_image.sh
  - cmp tropict/examples/arabica-futureb.png tropict/examples/subjects/arabica-futureb.png
