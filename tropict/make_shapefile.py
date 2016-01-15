@@ -7,7 +7,7 @@ from shapely import geometry, affinity, ops
 import geoshapes
 
 # Record information, used to extract Hawaii
-CHECK_HAWAII_IN_RECORD = False # If false, only uses HAWAII_BOX
+CHECK_HAWAII_IN_RECORD = True # If false, only uses HAWAII_BOX
 SHAPEFILE_REGION_FIELD = "name"
 SHAPEFILE_HAWAII_REGION = "United States"
 # Rectangle containing Hawaii
@@ -66,8 +66,8 @@ def splitworlds_shape(shape, seam_longitude):
 
     in_newworlds = []
     for geom in geoms:
-        minnew = lib.in_newworld(*geom.bounds[:2])
-        maxnew = lib.in_newworld(*geom.bounds[2:])
+        minnew = in_newworld(*geom.bounds[:2])
+        maxnew = in_newworld(*geom.bounds[2:])
         assert minnew == maxnew
         in_newworlds.append(minnew)
 

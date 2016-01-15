@@ -1,13 +1,14 @@
 import sys
 import numpy as np
 
+MAX_NCDF_VALUE = 1e6
+# allow blue for oceans
+OVERWRITABLE_COLORS = [[0, 0, 255]] # also white, implicitly
+
 scalex = .64  # without vertical stretching height / (2079 / scalex) = 60 / 360
 
 def ntoend(p0):
     return 2079 * (1 - p0) / (scalex + .001)
-
-# allow blue for oceans
-overwritable_colors = [[0, 0, 255]] # also white, implicitly
 
 def extract_image(original, row, p0, length):
     p1 = p0 + scalex * length / 2079.
@@ -30,7 +31,7 @@ def copyover_image(result, ii, o0, o1, values):
     span = range(result.shape[1])
     span = span[o0:o1]
     blanks = (result[ii, span, 0] == 255) & (result[ii, span, 1] == 255) & (result[ii, span, 2] == 255)
-    for color in overwritable_colors:
+    for color in OVERWRITABLE_COLORS:
         blanks = blanks | ((result[ii, span, 0] == color[0]) & (result[ii, span, 1] == color[1]) & (result[ii, span, 2] == color[2]))
     result[ii, np.array(span)[blanks], :] = values[blanks, :]
 
@@ -87,7 +88,7 @@ def dropinitialhori_ncdf(values):
 def copyover_ncdf(result, ii, o0, o1, values):
     span = range(result.shape[1])
     span = span[o0:o1]
-    blanks = np.logical_or(np.isnan(result[ii, span]), result[ii, span] > 1e6)
+    blanks = np.logical_or(np.isnan(result[ii, span]), result[ii, span] > MAX_NCDF_VALUE)
     result[ii, np.array(span)[blanks]] = values[blanks]
 
 def convert_ncdf(pathin, pathout):
