@@ -1,0 +1,34 @@
+language: python
+python:
+  - "2.7"
+
+# command to install dependencies
+virtualenv:
+  system_site_packages: true
+
+sudo: false
+
+addons:
+  apt:
+    packages:
+      - libhdf5-serial-dev
+      - netcdf-bin
+      - libnetcdf-dev
+      - libblas-dev
+      - liblapack-dev
+      - libatlas-base-dev
+      - gfortran
+
+install:
+ - pip install -r requirements.txt
+
+# Run tests
+script:
+ - ./tropict/examples/process_ncdf.sh
+ - ncdump tropict/bio-2b.nc4 > tropict/bio-2b.nc4.txt
+ - ncdump tropict/examples/subjects/bio-2b.nc4 > tropict/examples/subjects/bio-2b.nc4.txt
+ - cmp tropict/bio-2b.nc4.txt tropict/examples/subjects/bio-2b.nc4.txt
+ - ./tropict/examples/process_image.sh
+ - cmp tropict/arabica-futureb.png tropict/examples/subjects/arabica-futureb.png
+ - ./tropict/examples/process_shapefile.sh
+ - cmp tropict/examples/countries.shp tropict/examples/countries2.shp

@@ -39,7 +39,7 @@ get.conf.clust <- function(mod, cluster, var, xx, alpha) {
     if (!is.null(not)) {
         cluster <- cluster[-not]
     }
-    
+
     M <- length(unique(cluster))
     N <- length(cluster)
     K <- mod$rank
@@ -50,7 +50,7 @@ get.conf.clust <- function(mod, cluster, var, xx, alpha) {
     results <- data.frame(yhat=c(), lo=c(), hi=c())
     for (ii in 1:nrow(xx)) {
         myxx <- rep(0, length(mod$coefficients))
-        myxx[var] <- xx[ii,]
+        myxx[var] <- as.numeric(xx[ii,])
 
         yhat <- sum(mod$coefficients * myxx, na.rm=T)
         myxxnn <- myxx[!is.na(mod$coefficients)]

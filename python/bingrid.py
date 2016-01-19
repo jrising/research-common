@@ -8,7 +8,7 @@ class BinaryGrid(SpatialGrid):
         self.fp = fp
         self.bytes = bytes
         self.fmt = fmt
-        
+
         assert struct.calcsize(fmt) == bytes, "Format does not match byte count"
 
         seeked = False
@@ -52,7 +52,7 @@ class BilBinaryGrid(BinaryGrid):
 
             assert rot1 == 0 and rot2 == 0, "Rotations are not supported"
             assert sizey < 0, "Latitude steps currently must be negative"
-        
+
         with open(os.path.join(prefix + ".hdr")) as hdrfp:
             for line in hdrfp:
                 vals = line.split()
