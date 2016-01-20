@@ -31,4 +31,4 @@ script:
  - ./tropict/examples/process_image.sh
  - cmp tropict/arabica-futureb.png tropict/examples/subjects/arabica-futureb.png
  - ./tropict/examples/process_shapefile.sh
- - cmp tropict/ne_50m_admin_0_countries/ne_50m_admin_0_countries tropict/examples/countries2.shp
+ - cmp tropict/ne_50m_admin_0_countries/ne_50m_admin_0_countries.shp tropict/examples/countries2.shp
