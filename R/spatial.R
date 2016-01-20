@@ -80,7 +80,7 @@ spaceTimeRasterAverage <- function(events, lonlattimeraster, polys) {
     numtimes <- dim(lonlattimeraster)[3]
     averages <- rep(NA, numtimes)
     for (tt in 1:numtimes)
-        averages[tt] <- mean(get.as.indexed(lonlattimeraster[, , tt], events$col[eids], events$row[eids]))
+        averages[tt] <- mean(get.as.indexed(lonlattimeraster[, , tt], events$col[eids], events$row[eids]), na.rm=T)
 
     averages
 }
@@ -99,6 +99,7 @@ spaceTimeWeightedRasterAverage <- function(events, lonlattimeraster, polys, weig
 
     ## Weigh each point by its closest available weight
     eid.weights <- get.as.indexed(weights, transformToIndex(events$X[eids], weights.lon), transformToIndex(events$Y[eids], weights.lat))
+
     valid.weights <- !is.na(eid.weights)
 
     eids <- eids[valid.weights]
