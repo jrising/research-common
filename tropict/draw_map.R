@@ -61,7 +61,44 @@ shiftleft$X <- shiftleft$X - 260 + 30
 ## Split on Pakistan, use Gall-Peters
 ## For aspect ratio, treat x = radian lon, so width = 260 * pi / 180
 
-plotMap <- function(border) {
+## If col is provided to any of the functions below, it must either be
+## a single value or have a value for every country ordered by
+## `polydata`
+
+## This function helps you do that, passed two vectors of the same
+## length
+arrange.col <- function(countries, cols) {
+    col <- rep(NA, nrow(polydata))
+    for (ii in 1:length(countries)) {
+        country <- as.character(countries[ii])
+        if (country %in% polydata$name)
+            col[country == polydata$name] <- cols[ii]
+        else
+            print(country)
+    }
+
+    col
+}
+
+get.col <- function(polys, col=NULL) {
+    if (is.null(col) || length(col) == 1)
+        col
+    else
+        col[polys$PID[!duplicated(polys$PID)]]
+}
+
+## Plot polygons one at a time, so colors match up
+addPolysSingly <- function(polys, border, col) {
+    if (length(col) == 1) {
+        addPolys(polys, border=border, col=col)
+    } else {
+        pids <- polys$PID[!duplicated(polys$PID)]
+        for (ii in 1:length(pids))
+            addPolys(subset(polys, PID == pids[ii]), border=border, col=col[ii])
+    }
+}
+
+plotMap <- function(border, col=NULL) {
     par(mar=rep(0, 4))
 
     oldshape.gp <- oldshape
@@ -70,31 +107,34 @@ plotMap <- function(border) {
     oldshape.gp$Y <- 2 * sin(oldshape.gp$Y * pi / 180)
     oldshape.gp$Y[oldshape.gp$Y > 0] <- oldshape.gp$Y[oldshape.gp$Y > 0] - .05 * sin(oldshape.gp$Y[oldshape.gp$Y > 0] * pi)
     oldshape.gp$Y[oldshape.gp$Y > -.25 & oldshape.gp$Y < .25] <- oldshape.gp$Y[oldshape.gp$Y > -.25 & oldshape.gp$Y < .25] - .015 * sin((oldshape.gp$Y[oldshape.gp$Y > -.25 & oldshape.gp$Y < .25] + .25) * 2 * pi)
-    plotPolys(oldshape.gp, ylim=c(-1, 1), xlim=c(-165, 65) * pi / 180, border=border)
 
-    addMap2(border)
+    plotPolys(oldshape.gp, ylim=c(-1, 1), xlim=c(-165, 65) * pi / 180, border="#00000000")
+    addPolysSingly(oldshape.gp, border=border, col=get.col(oldshape.gp, col))
+
+    addMap2(border, col=col)
 }
 
-addMap <- function(border) {
+addMap <- function(border, col="#00000000") {
     oldshape.gp <- oldshape
     oldshape.gp$X <- oldshape.gp$X - 1.5
     oldshape.gp$X <- oldshape.gp$X * pi / 180
     oldshape.gp$Y <- 2 * sin(oldshape.gp$Y * pi / 180)
     oldshape.gp$Y[oldshape.gp$Y > 0] <- oldshape.gp$Y[oldshape.gp$Y > 0] - .05 * sin(oldshape.gp$Y[oldshape.gp$Y > 0] * pi)
     oldshape.gp$Y[oldshape.gp$Y > -.25 & oldshape.gp$Y < .25] <- oldshape.gp$Y[oldshape.gp$Y > -.25 & oldshape.gp$Y < .25] - .015 * sin((oldshape.gp$Y[oldshape.gp$Y > -.25 & oldshape.gp$Y < .25] + .25) * 2 * pi)
-    addPolys(oldshape.gp, border=border, col="#00000000")
 
-    addMap2(border)
+    addPolysSingly(oldshape.gp, border=border, col=get.col(oldshape.gp, col))
+
+    addMap2(border, col=col)
 }
 
-addMap2 <- function(border) {
+addMap2 <- function(border, col="#00000000") {
     oldshape2.gp <- oldshape
     oldshape2.gp$X <- oldshape2.gp$X - 265 + 30 + 1
     oldshape2.gp$X <- oldshape2.gp$X * pi / 180
     oldshape2.gp$Y <- 2 * sin(oldshape2.gp$Y * pi / 180)
     oldshape2.gp$Y[oldshape2.gp$Y > 0] <- oldshape2.gp$Y[oldshape2.gp$Y > 0] - .05 * sin(oldshape2.gp$Y[oldshape2.gp$Y > 0] * pi)
     oldshape2.gp$Y[oldshape2.gp$Y > -.25 & oldshape2.gp$Y < .25] <- oldshape2.gp$Y[oldshape2.gp$Y > -.25 & oldshape2.gp$Y < .25] - .015 * sin((oldshape2.gp$Y[oldshape2.gp$Y > -.25 & oldshape2.gp$Y < .25] + .25) * 2 * pi)
-    addPolys(oldshape2.gp, border=border, col="#00000000")
+    addPolysSingly(oldshape2.gp, border=border, col=get.col(oldshape2.gp, col))
 
     aussie.gp <- ausshape
     aussie.gp$X <- aussie.gp$X - 265 + 30 + 1
@@ -102,7 +142,7 @@ addMap2 <- function(border) {
     aussie.gp$Y <- 2 * sin(aussie.gp$Y * pi / 180)
     aussie.gp$Y[aussie.gp$Y > 0] <- aussie.gp$Y[aussie.gp$Y > 0] - .05 * sin(aussie.gp$Y[aussie.gp$Y > 0] * pi)
     aussie.gp$Y[aussie.gp$Y > -.25 & aussie.gp$Y < .25] <- aussie.gp$Y[aussie.gp$Y > -.25 & aussie.gp$Y < .25] - .015 * sin((aussie.gp$Y[aussie.gp$Y > -.25 & aussie.gp$Y < .25] + .25) * 2 * pi)
-    addPolys(aussie.gp, border=border, col="#00000000")
+    addPolysSingly(aussie.gp, border=border, col=get.col(aussie.gp, col))
 
     shiftright.gp <- shiftright
     shiftright.gp$X <- shiftright.gp$X + .15
@@ -110,7 +150,7 @@ addMap2 <- function(border) {
     shiftright.gp$Y <- 2 * sin(shiftright.gp$Y * pi / 180)
     shiftright.gp$Y[shiftright.gp$Y > 0] <- shiftright.gp$Y[shiftright.gp$Y > 0] - .05 * sin(shiftright.gp$Y[shiftright.gp$Y > 0] * pi)
     shiftright.gp$Y[shiftright.gp$Y > -.25 & shiftright.gp$Y < .25] <- shiftright.gp$Y[shiftright.gp$Y > -.25 & shiftright.gp$Y < .25] - .015 * sin((shiftright.gp$Y[shiftright.gp$Y > -.25 & shiftright.gp$Y < .25] + .25) * 2 * pi)
-    addPolys(shiftright.gp, border=border, col="#00000000")
+    addPolysSingly(shiftright.gp, border=border, col=get.col(shiftright.gp, col))
 
     shiftleft.gp <- shiftleft
     shiftleft.gp$X <- shiftleft.gp$X - 5 + 1
@@ -118,14 +158,14 @@ addMap2 <- function(border) {
     shiftleft.gp$Y <- 2 * sin(shiftleft.gp$Y * pi / 180)
     shiftleft.gp$Y[shiftleft.gp$Y > 0] <- shiftleft.gp$Y[shiftleft.gp$Y > 0] - .05 * sin(shiftleft.gp$Y[shiftleft.gp$Y > 0] * pi)
     shiftleft.gp$Y[shiftleft.gp$Y > -.25 & shiftleft.gp$Y < .25] <- shiftleft.gp$Y[shiftleft.gp$Y > -.25 & shiftleft.gp$Y < .25] - .015 * sin((shiftleft.gp$Y[shiftleft.gp$Y > -.25 & shiftleft.gp$Y < .25] + .25) * 2 * pi)
-    addPolys(shiftleft.gp, border=border, col="#00000000")
+    addPolysSingly(shiftleft.gp, border=border, col=get.col(shiftleft.gp, col))
 
     hawaii.gp <- hawshape
     hawaii.gp$X <- hawaii.gp$X + 63
     hawaii.gp$X <- hawaii.gp$X * pi / 180
     hawaii.gp$Y <- hawaii.gp$Y + .7
     hawaii.gp$Y <- 2 * sin((hawaii.gp$Y - 2) * pi / 180)
-    addPolys(hawaii.gp, border=border, col="#00000000")
+    addPolysSingly(hawaii.gp, border=border, col=get.col(hawaii.gp, col))
 }
 
 addSeams <- function(col) {

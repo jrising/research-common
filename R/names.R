@@ -1,3 +1,38 @@
+any2canonical <- function(country) {
+    if (country == "China (Hong Kong)")
+        return("Hong Kong")
+    if (country == "Comoros Isl.")
+        return("Comoros")
+    if (country == "Côte d'Ivoire")
+        return("Cote d'Ivoire")
+    if (country == "Denmark (Greenland)")
+        return("Greenland")
+    if (country == "India (mainland)")
+        return("India")
+    if (country == "Viet Nam")
+        return("Vietnam")
+    if (country == "Bolivia (Plurinational State of)")
+        return("Bolivia")
+    if (country == "United Republic of Tanzania")
+        return("Tanzania")
+    if (country == "United States of America")
+        return("United States")
+    if (country %in% c("Venezuela (Bolivarian Republic of)", "Venezuela, RB"))
+        return("Venezuela")
+    if (country == "Egypt, Arab Rep.")
+        return("Egypt")
+    if (country == "Iran, Islamic Rep.")
+        return("Iran")
+    if (country == "Korea, Dem. Rep.")
+        return("North Korea")
+    if (country == "Syrian Arab Republic")
+        return("Syria")
+    if (country == "Yemen, Rep.")
+        return("Yemen")
+
+    return(gsub("&amp;", "&", as.character(country)))
+}
+
 canonical2worldbank <- function(country) {
     if (country == "Bahamas")
         return("Bahamas, The")
@@ -17,13 +52,13 @@ canonical2worldbank <- function(country) {
         return("Yemen, Rep.")
     if (country == "Cape Verde")
       return("Cabo Verde")
-    if (country == "Congo, R. of")
+    if (country %in% c("Congo, R. of", "Congo (Rep.)"))
         return("Congo, Rep.")
-    if (country == "Congo (ex-Zaire)")
+    if (country %in% c("Congo (ex-Zaire)", "Congo (DemRep)"))
         return("Congo, Dem. Rep.")
     if (country == "Gambia")
         return("Gambia, The")
-    if (country == "Hong Kong")
+    if (country %in% c("Hong Kong", "Hong Kong (China)"))
       return("Hong Kong SAR, China")
     if (country == "Marshall Isl.")
       return("Marshall Islands")
@@ -51,7 +86,8 @@ canonical2worldbank <- function(country) {
     if (country %in% c("Australia (Christmas Isl.)", "Australia (Cocos (Keeling) Isl.)", "Australia (Heard &amp; McDonald Isl.)",
                        "Australia (Lord Howe Isl.)", "Australia (Macquarie Isl.)", "Christmas Isl. (Australia)",
                        "Australia (Cocos (Keeling) Isl.)", "Heard & McDonald Isl. (Australia)",
-                       "Lord Howe Isl. (Australia)", "Macquarie Isl. (Australia)", "Norfolk Isl. (Australia)", "Cocos Islands", "Christmas Island"))
+                       "Lord Howe Isl. (Australia)", "Macquarie Isl. (Australia)", "Norfolk Isl. (Australia)", "Cocos Islands",
+                       "Christmas Island", "Cocos (Keeling) Isl. (Australia)"))
         return("Australia")
     if (country %in% c("Trindade & Martin Vaz Isl. (Brazil)"))
         return("Brazil")
@@ -60,11 +96,12 @@ canonical2worldbank <- function(country) {
       return("Chile")
     if (country %in% c("Taiwan"))
       return("China")
-    if (country %in% c("Greenland", "Faeroe Isl. (Denmark)"))
+    if (country %in% c("Greenland", "Faeroe Isl. (Denmark)", "Greenland (Denmark)"))
       return("Denmark")
     if (country %in% c("Ecuador (Galapagos Isl.)", "Galapagos Isl. (Ecuador)"))
       return("Ecuador")
     if (country %in% c("France (French Guiana)", "France (French Polynesia)", "France (Guadeloupe)",
+                       "French Guiana (France)", "French Polynesia (France)",
                        "Guadeloupe", "France (Martinique)", "Martinique",
                        "France (Mayotte)", "France (New Caledonia)", "France (Réunion)",
                        "Amsterdam & St Paul Isl. (France)", "New Caledonia",
@@ -81,15 +118,17 @@ canonical2worldbank <- function(country) {
         return("Japan")
     if (country %in% c("Korea (North)", "North Korea"))
         return("Korea, Rep.")
-    if (country %in% c("Korea (South)", "South Korea"))
+    if (country %in% c("Korea (South)", "South Korea", "Korea South"))
       return("Korea, Dem. Rep.")
     if (country %in% c("Malaysia (Peninsula East)", "Malaysia (Peninsula West)", "Malaysia (Sabah)", "Malaysia (Sarawak)"))
         return("Malaysia")
     if (country %in% c("Western Sahara (Morocco)", "Western Sahara"))
         return("Morocco")
-    if (country %in% c("Leeward Netherlands Antilles", "Windward Netherlands Antilles"))
+    if (country %in% c("Leeward Netherlands Antilles", "Windward Netherlands Antilles",
+                       "Aruba (Leeward Netherlands Antilles)", "Saba (Windward Netherlands Antilles)"))
         return("Netherlands")
-    if (country %in% c("Cook Isl. (New Zealand)", "Kermadec Isl. (New Zealand)", "New Zealand (Niue)", "New Zealand (Cook Isl.)",
+    if (country %in% c("Cook Isl. (New Zealand)", "Kermadec Isl. (New Zealand)", "New Zealand (Niue)",
+                       "New Zealand (Cook Isl.)", "Niue (New Zealand)", "Tokelau (New Zealand)",
                        "New Zealand (Tokelau)"))
       return("New Zealand")
     if (country %in% c("Bouvet Isl. (Norway)", "Norway (Svalbard Isl.)", "Jan Mayen Isl. (Norway)", "Svalbard Isl. (Norway)"))
@@ -121,7 +160,8 @@ canonical2worldbank <- function(country) {
                        "Puerto Rico", "Puerto Rico (USA)", "US Virgin Isl.", "Guam (USA)", "Hawaii Main Islands (USA)",
                        "Hawaii Northwest Islands (USA)", "Howland & Baker Isl. (USA)", "Jarvis Isl. (USA)",
                        "Johnston Atoll (USA)", "Palmyra Atoll & Kingman Reef (USA)", "United States, East Coast",
-                       "United States, Gulf of Mexico", "United States, West Coast", "Wake Isl. (USA)", "USA"))
+                       "United States, Gulf of Mexico", "United States, West Coast", "Wake Isl. (USA)", "American Samoa (USA)",
+                       "US Virgin Isl. (USA)", "USA"))
         return("United States")
     if (country %in% c("Gaza Strip"))
         return("West Bank and Gaza")
@@ -152,4 +192,47 @@ canonical2continent <- function(country) {
     return("Open Ocean")
 
   return(NA)
+}
+
+canonical2naturalearth  <- function(country) {
+    if (country == "Cote d'Ivoire")
+      return("C\xf4te d'Ivoire")
+    if (country == "Central African Republic")
+        return("Central African Rep.")
+    if (country == "Democratic Republic of the Congo")
+        return("Dem. Rep. Congo")
+    if (country == "Dominican Republic")
+        return("Dominican Rep.")
+    if (country == "Equatorial Guinea")
+        return("Eq. Guinea")
+    if (country == "French Polynesia")
+        return("Fr. Polynesia")
+    ##if (country == "Guadeloupe")
+    ##    return("")
+    if (country == "Lao People's Democratic Republic")
+        return("Lao PDR")
+    ##if (country == "Martinique")
+    ##    return("")
+    if (country == "Saint Vincent and the Grenadines")
+        return("St. Vin. and Gren.")
+    if (country == "Sao Tome and Principe")
+        return("S\xe3o Tom\xe9 and Principe")
+
+    return(country)
+}
+
+any2map <- function(name) {
+    name <- any2canonical(name)
+    if (name == "United States")
+        return("USA")
+    if (name == "United Kingdom")
+        return("UK")
+    if (name == "Congo, Dem. Rep.")
+        return("Zaire")
+    if (name == "Congo, Rep.")
+        return("Congo")
+    if (name == "Russian Federation")
+        return("USSR")
+
+    return(name)
 }
