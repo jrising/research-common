@@ -1,4 +1,5 @@
 import numpy as np
+import math
 
 class SpatialGrid(object):
     def __init__(self, x0_corner, y0_corner, sizex, sizey, ncols, nrows):
@@ -9,11 +10,14 @@ class SpatialGrid(object):
         self.ncols = ncols
         self.nrows = nrows
 
+    def get_config(self):
+        return [self.x0_corner, self.y0_corner, self.sizex, self.sizey, self.ncols, self.nrows]
+        
     def rowcol(self, latitude, longitude):
         row = int(math.floor((self.y0_corner - latitude) / self.sizey))
         col = int(math.floor((longitude - self.x0_corner) / self.sizex))
         return (row, col)
-    
+
     def getll_raw(self, latitude, longitude):
         raise NotImplementedError()
 
@@ -38,7 +42,9 @@ class DelimitedSpatialGrid(SpatialGrid):
 
     def getll_raw(self, latitude, longitude):
         row, col = self.rowcol(latitude, longitude)
-        return values[row, col]
+        if row >= self.values.shape[0] or col >= self.values.shape[1]:
+            return np.nan
+        return self.values[row, col]
 
 class AsciiSpatialGrid(DelimitedSpatialGrid):
     def __init__(self, fp, delimiter):
@@ -63,4 +69,3 @@ class AsciiSpatialGrid(DelimitedSpatialGrid):
 
         super(AsciiSpatialGrid, self).__init__(fp, xllcorner, yllcorner, cellsize, cellsize, ncols, nrows, delimiter)
         self.values[self.values == nodata] = np.nan
-

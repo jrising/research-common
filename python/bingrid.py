@@ -1,6 +1,24 @@
 from spacegrid import SpatialGrid
+import numpy as np
 import struct, math, os
 
+class NumpyGrid(SpatialGrid):
+    def __init__(self, array, x0_corner, y0_corner, sizex, sizey, ncols, nrows):
+        super(NumpyGrid, self).__init__(x0_corner, y0_corner, sizex, sizey, ncols, nrows)
+
+        self.array = array
+
+    @staticmethod
+    def from_regular_axes(array, latitude, longitude):
+        return NumpyGrid(array, min(longitude), max(latitude), abs(np.mean(np.diff(longitude))),
+                         -abs(np.mean(np.diff(latitude))), array.shape[1], array.shape[0])
+        
+    def getll_raw(self, latitude, longitude):
+        row = int(math.floor((self.y0_corner - latitude) / self.sizey))
+        col = int(math.floor((longitude - self.x0_corner) / self.sizex))
+
+        return self.array[row, col]
+    
 class BinaryGrid(SpatialGrid):
     def __init__(self, fp, x0_corner, y0_corner, sizex, sizey, ncols, nrows, bytes, fmt):
         super(BinaryGrid, self).__init__(x0_corner, y0_corner, sizex, sizey, ncols, nrows)
@@ -35,27 +53,31 @@ class BinaryGrid(SpatialGrid):
 
         # unpack binary data into a flat tuple z
         if value == '':
-            return [float('nan')]
+            return float('nan')
         z = struct.unpack(self.fmt, value)
 
-        return z
+        return z[0]
 
 class BilBinaryGrid(BinaryGrid):
-    def __init__(self, bilfp, prefix):
-        with open(os.path.join(prefix + ".blw")) as blwfp:
-            sizex = float(blwfp.next().strip())
-            rot1 = float(blwfp.next().strip())
-            rot2 = float(blwfp.next().strip())
-            sizey = float(blwfp.next().strip())
-            upperleft_x = float(blwfp.next().strip())
-            upperleft_y = float(blwfp.next().strip())
+    def __init__(self, bilfp, prefix, flipy=True):
+        if os.path.exists(os.path.join(prefix + ".blw")):
+            with open(os.path.join(prefix + ".blw")) as blwfp:
+                sizex = float(blwfp.next().strip())
+                rot1 = float(blwfp.next().strip())
+                rot2 = float(blwfp.next().strip())
+                sizey = float(blwfp.next().strip())
+                upperleft_x = float(blwfp.next().strip())
+                upperleft_y = float(blwfp.next().strip())
 
-            assert rot1 == 0 and rot2 == 0, "Rotations are not supported"
-            assert sizey < 0, "Latitude steps currently must be negative"
+                assert rot1 == 0 and rot2 == 0, "Rotations are not supported"
+                assert sizey < 0, "Latitude steps currently must be negative"
 
         with open(os.path.join(prefix + ".hdr")) as hdrfp:
             for line in hdrfp:
                 vals = line.split()
+                if len(vals) < 2:
+                    continue
+
                 if vals[0] == 'BYTEORDER':
                     byteorder = vals[1]
                 if vals[0] == 'LAYOUT':
@@ -74,17 +96,29 @@ class BilBinaryGrid(BinaryGrid):
                     totalrowbytes = int(vals[1])
                 if vals[0] == 'BANDGAPBYTES':
                     bandgapbytes = int(vals[1])
-
-            if byteorder == 'M':
-                fmt = '>i'
-            else:
-                fmt = '<i'
+                if vals[0] == 'XDIM':
+                    sizex = float(vals[1])
+                if vals[0] == 'YDIM':
+                    sizey = float(vals[1])
+                if vals[0] == 'ULXMAP':
+                    upperleft_x = float(vals[1])
+                if vals[0] == 'ULYMAP':
+                    upperleft_y = float(vals[1])
 
             assert layout == 'BIL', "Only the BIL format is supported."
             assert nbands == 1, "Only single band files are supported."
-            assert nbits == 32, "Only 32-bit value files are supported."
+            assert nbits == 32 or nbits == 16, "Only 16- or 32-bit value files are supported."
 
-        super(BilBinaryGrid, self).__init__(bilfp, upperleft_x, upperleft_y, sizex, -sizey, ncols, nrows, nbits / 8, fmt)
+            if byteorder == 'M':
+                fmt = '>' + ('i' if nbits == 32 else 'h')
+            else:
+                fmt = '<' + ('i' if nbits == 32 else 'h')
+
+        if flipy:
+            sizey = -sizey
+
+        super(BilBinaryGrid, self).__init__(bilfp, upperleft_x, upperleft_y, sizex, sizey, ncols, nrows, nbits / 8, fmt)
+
 
 class GlobalBinaryGrid(BinaryGrid):
     def __init__(self, fp, nrows, ncols, bytes, fmt, uneven_cells=False):
