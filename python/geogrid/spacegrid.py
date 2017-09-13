@@ -29,6 +29,23 @@ class SpatialGrid(object):
         return np.arange(self.y0_corner + self.sizey * self.nrows, self.y0_corner + self.sizey / 2,
                          step=-self.sizey)
 
+class NumpyGrid(SpatialGrid):
+    def __init__(self, array, x0_corner, y0_corner, sizex, sizey, ncols, nrows):
+        super(NumpyGrid, self).__init__(x0_corner, y0_corner, sizex, sizey, ncols, nrows)
+
+        self.array = array
+
+    @staticmethod
+    def from_regular_axes(array, latitude, longitude):
+        return NumpyGrid(array, min(longitude), max(latitude), abs(np.mean(np.diff(longitude))),
+                         -abs(np.mean(np.diff(latitude))), array.shape[1], array.shape[0])
+        
+    def getll_raw(self, latitude, longitude):
+        row = int(math.floor((self.y0_corner - latitude) / self.sizey))
+        col = int(math.floor((longitude - self.x0_corner) / self.sizex))
+
+        return self.array[row, col]
+
 class DelimitedSpatialGrid(SpatialGrid):
     def __init__(self, fp, x0_corner, y0_corner, sizex, sizey, ncols, nrows, delimiter):
         """Note that delimiter can be None, in which case multiple whitespace characters are the delimiter."""
