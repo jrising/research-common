@@ -26,9 +26,9 @@ install:
 # Only compare after 15 lines of netcdfs, because old versions don't include 'string' specifier
 script:
  - ./tropict/examples/process_ncdf.sh
- - ncdump tropict/bio-2b.nc4 | tail -n +15 > tropict/bio-2b.nc4.txt
+ - ncdump tropict/bio-2b.nc4 | tail -n +`ncdump tropict/bio-2b.nc4 | grep -n "data:" | cut -f1 -d:` > tropict/bio-2b.nc4.txt
  - head -n 40 tropict/bio-2b.nc4.txt
- - ncdump tropict/examples/subjects/bio-2b.nc4 | tail -n +15 > tropict/examples/subjects/bio-2b.nc4.txt
+ - ncdump tropict/examples/subjects/bio-2b.nc4 | tail -n +`ncdump tropict/examples/subjects/bio-2b.nc4 | grep -n "data:" | cut -f1 -d:` > tropict/examples/subjects/bio-2b.nc4.txt
  - head -n 40 tropict/examples/subjects/bio-2b.nc4.txt
  - cmp tropict/bio-2b.nc4.txt tropict/examples/subjects/bio-2b.nc4.txt
  - ./tropict/examples/process_image.sh
