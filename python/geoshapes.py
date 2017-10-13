@@ -40,11 +40,18 @@ def polygons(polyshape):
 def write_polys(writer, polygon, attribs=None):
     """Writes a MultiPolygon to the given shapefile writer."""
     if isinstance(polygon, Polygon):
-        writer.poly(shapeType=shapefile.POLYGON, parts=[polygon.exterior.coords])
+        parts = [polygon.exterior.coords]
+        parts.extend([interior.coords for interior in polygon.interiors])
+        writer.poly(shapeType=shapefile.POLYGON, parts=parts)
         if attribs is not None:
             writer.record(*attribs)
     elif isinstance(polygon, MultiPolygon) or isinstance(polygon, GeometryCollection):
-        writer.poly(shapeType=shapefile.POLYGON, parts=[geom.exterior.coords for geom in polygon.geoms if isinstance(geom, Polygon)])
+        parts = []
+        for geom in polygon.geoms:
+            if isinstance(geom, Polygon):
+                parts.append(geom.exterior.coords)
+                parts.extend([interior.coords for interior in geom.interiors])
+        writer.poly(shapeType=shapefile.POLYGON, parts=parts)
         if attribs is not None:
             writer.record(*attribs)
 

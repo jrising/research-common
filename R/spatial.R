@@ -1,4 +1,4 @@
-## Requires source("distance.R")
+source("distance.R")
 
 prepareEvents <- function(lons, lats, proj.abbr) {
     pts <- expand.grid(x=lons, y=lats)
