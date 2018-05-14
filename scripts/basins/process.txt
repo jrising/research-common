@@ -1,4 +1,4 @@
-0. Download TauDEM 5.0 and compile all tools.
+0. Download TauDEM 5.0 and compile all tools into a subdirectory `TauDEM`.
 
 1. Find containing basin
   Option 1: http://riverbasins.wateractionhub.org/#find_lat_lng and
