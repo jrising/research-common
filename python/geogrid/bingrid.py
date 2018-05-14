@@ -27,18 +27,18 @@ class BinaryGrid(SpatialGrid):
         self.fp.close()
 
     def getll_raw(self, latitude, longitude):
-        row = int(math.floor((self.y0_corner - latitude) / self.sizey))
+        row = int(math.floor((latitude - self.y0_corner) / self.sizey))
         col = int(math.floor((longitude - self.x0_corner) / self.sizex))
 
         self.fp.seek((row*self.ncols + col)*self.bytes)
         value = self.fp.read(self.bytes)
-
+        
         # unpack binary data into a flat tuple z
         if value == '':
             return float('nan')
         z = struct.unpack(self.fmt, value)
-
-        return z[0]
+        
+        return z
 
 class BilBinaryGrid(BinaryGrid):
     def __init__(self, bilfp, prefix, flipy=True):
@@ -105,7 +105,7 @@ class BilBinaryGrid(BinaryGrid):
 class GlobalBinaryGrid(BinaryGrid):
     def __init__(self, fp, nrows, ncols, bytes, fmt, uneven_cells=False):
         sizex = 360.0 / ncols
-        sizey = 180.0 / nrows
+        sizey = -180.0 / nrows
         if not uneven_cells:
             assert ncols > nrows, "Fewer columns than rows, without uneven_cells set."
 

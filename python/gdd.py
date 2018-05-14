@@ -4,6 +4,9 @@ import warnings
 warnings.simplefilter("ignore", RuntimeWarning)
 
 def above_threshold(mins, maxs, threshold):
+    return np.sum(above_threshold_each(mins, maxs, threshold))
+    
+def above_threshold_each(mins, maxs, threshold):
     """Use a sinusoidal approximation to estimate the number of Growing
 Degree-Days above a given threshold, using daily minimum and maximum
 temperatures.
@@ -30,7 +33,7 @@ mins and maxs are numpy arrays; threshold is in the same units."""
     # Calculate integral
     F1s = -minus_over_2 * np.cos(2*np.pi*d1s) / two_pi + plus_over_2 * d1s
     F0s = -minus_over_2 * np.cos(2*np.pi*d0s) / two_pi + plus_over_2 * d0s
-    return np.sum(F1s - F0s - threshold * (d1s - d0s))
+    return F1s - F0s - threshold * (d1s - d0s)
 
 def get_gddkdd(mins, maxs, gdd_start, kdd_start):
     """Get the Growing Degree-Days, as degree-days between gdd_start and

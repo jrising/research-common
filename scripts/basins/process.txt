@@ -1,0 +1,19 @@
+1. Find containing basin
+  Option 1: http://riverbasins.wateractionhub.org/#find_lat_lng and
+    download shapefile
+  Option 2: Specify a rectangular area:
+    31.4699884,66.0391784,20.8776093,78.1941773
+
+2. Run
+process.sh <shapefile or rectangle> <output directory> <outlet longitude> <output latitude>
+
+Make sure that each argument in <>'s contains no spaces unless they
+are escaped or the whole in quotes.
+
+3. In QGIS:
+
+Load ...ad8.tiff file.
+Raster > Conversion > Polygonize
+Vector > Geoprocessing Tools > Dissolve > -- all --
+
+(River system from Raster > Extraction > Contour)

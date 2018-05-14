@@ -1,16 +1,17 @@
 ## COPIED from agmodels
 
-import urllib, multiprocessing, datetime, contextlib
+import urllib, multiprocessing, datetime, contextlib, tempfile
+import xarray as xr
 
 def _urlread(url):
     with contextlib.closing(urllib.urlopen(url)) as page:
         return page.read()
 
-def urlread(url):
+def urlread(url, timeout=30):
     p = multiprocessing.Pool(1)
     deferred = p.apply_async(_urlread, [url])
     try:
-        result = deferred.get(30)
+        result = deferred.get(timeout)
     except multiprocessing.TimeoutError:
         print "Timed out on " + url
         result = None
@@ -40,15 +41,36 @@ class IRIDLSource:
             print fullurl
             raise e
 
+    def get_boxavg_timeseries(self, swlat, swlon, nelat, nelon):
+        fullurl = self.url + "X/%f/%f/RANGEEDGES/Y/%f/%f/RANGEEDGES/[X+Y+]average/data.nc" % (swlat, nelat, swlon, nelon)
+        try:
+            data = None
+            timeout = 30
+            while data is None and timeout <= 120:
+                data = urlread(fullurl, timeout=timeout)
+                timeout += 30
+        except Exception as e:
+            print fullurl
+            raise e
+
+        if data is None:
+            return None
+
+        with tempfile.NamedTemporaryFile() as fp:
+            fp.write(data)
+            ds = xr.open_dataset(fp.name)
+
+        return ds
+
     def get_ll_times(self, latitude, longitude, date1, date2):
         if isinstance(date1, datetime.datetime):
             date1 = date1.strftime("%d %b %Y")
         if isinstance(date2, datetime.datetime):
             date2 = date2.strftime("%d %b %Y")
 
-        fullurl = self.url + "X/%f/VALUE/Y/%f/VALUE/T/(%s)(%s)RANGEEDGES/[T]data.tsv" % (longitude, latitude, date1, date2)
+        fullurl = self.url + "X/%f/VALUE/Y/%f/VALUE/T/(%s)(%s)RANGEEDGES/data.ch" % (longitude, latitude, date1, date2)
         try:
-            return map(float, urlread(fullurl).split("\t"))
+            return map(float, urlread(fullurl).split())
         except Exception as e:
             print fullurl
             raise e
