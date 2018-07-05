@@ -14,14 +14,14 @@ def extract_image(original, row, p0, length):
     p1 = p0 + scalex * length / 2079.
     if p1 > 1:
         part = extract_image(original, row, p0, ntoend(p0))
-        return np.concatenate((part, 255 * np.ones((length - len(part), 4))))
+        return np.concatenate((part, 255 * np.ones((length - len(part), part.shape[1]))))
 
     return original[row, map(int, original.shape[1] * np.linspace(p0, p1, length + 1)[0:-1]), :]
 
 def dropinitialhori_image(values):
     for ii in range(values.shape[0]):
         if values[ii, 0] == values[ii, 1] and values[ii, 0] == values[ii, 2] and values[ii, 0] != 255:
-            values[ii, :] = [255, 255, 255, 255]
+            values[ii, :] = [255, 255, 255, 255][:values.shape[1]]
         else:
             break
 
@@ -41,7 +41,7 @@ def convert_image(pathin, pathout):
     im = Image.open(pathin)
     data = np.asarray(im, dtype=np.uint8)
 
-    result = 255 * np.ones((900, 2079, 4), dtype=np.uint8)
+    result = 255 * np.ones((900, 2079, data.shape[2]), dtype=np.uint8)
     convert(data, result, extract_image, dropinitialhori_image, copyover_image)
 
     for ii in range(result.shape[0]):
@@ -50,7 +50,7 @@ def convert_image(pathin, pathout):
             o1 = int(693. + ii / 1.95)
         else:
             o1 = int(693. + 800 / 1.95)
-        result[ii, o1, :] = [0, 0, 0, 255]
+        result[ii, o1, :] = [0, 0, 0, 255][:data.shape[2]]
 
         # New to Africa
         if ii < 280:
@@ -59,19 +59,22 @@ def convert_image(pathin, pathout):
             o1 = 1260 + ii - 280
         else:
             o1 = 1260 + 580 - 280
-        result[ii, o1, :] = [0, 0, 0, 255]
+        result[ii, o1, :] = [0, 0, 0, 255][:data.shape[2]]
 
         # Around Hawaii
         if ii >= 65 and ii <= 95:
-            result[ii, 725, :] = [0, 0, 0, 255]
+            result[ii, 725, :] = [0, 0, 0, 255][:data.shape[2]]
         if ii == 190 or ii == 95:
             for jj in range(625, 725):
-                result[ii, jj, :] = [0, 0, 0, 255]
+                result[ii, jj, :] = [0, 0, 0, 255][:data.shape[2]]
         if ii >= 95 and ii <= 190:
-            result[ii, 625, :] = [0, 0, 0, 255]
-            result[ii, 725, :] = [0, 0, 0, 255]
+            result[ii, 625, :] = [0, 0, 0, 255][:data.shape[2]]
+            result[ii, 725, :] = [0, 0, 0, 255][:data.shape[2]]
 
-    oup = Image.fromarray(result, 'RGBA')
+    if data.shape[2] == 4:
+        oup = Image.fromarray(result, 'RGBA')
+    else:
+        oup = Image.fromarray(result, 'RGB')
     oup.save(pathout)
 
 def extract_ncdf(original, row, p0, length):
