@@ -14,7 +14,7 @@ class SpatialGrid(object):
         return [self.x0_corner, self.y0_corner, self.sizex, self.sizey, self.ncols, self.nrows]
         
     def rowcol(self, latitude, longitude):
-        row = int(math.floor((self.y0_corner - latitude) / self.sizey))
+        row = int(math.floor((self.y0_corner - latitude) / -self.sizey))
         col = int(math.floor((longitude - self.x0_corner) / self.sizex))
         return (row, col)
 
