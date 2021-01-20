@@ -42,12 +42,12 @@ above.portion <- function(mins, maxs, threshold) {
     knowns <- rep(NA, length(mins))
 
     ## If always above or below threshold, set crossings accordingly
-    knowns[mins > threshold] <- 1
-    knowns[maxs < threshold] <- 0
+    knowns[mins >= threshold] <- 1
+    knowns[maxs <= threshold] <- 0
 
     namins <- mins[is.na(knowns)]
     namaxs <- maxs[is.na(knowns)]
     knowns[is.na(knowns)] <- acos((2 * threshold - namins - namaxs) / (namaxs - namins)) / pi
 
-    sum(knowns)
+    knowns
 }

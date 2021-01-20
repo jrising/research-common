@@ -153,6 +153,7 @@ class HWSDSoil(GlobalBinaryGrid, StaticFeature):
             topname = self.soilnames['classes'].get(topnum, None)
             botname = self.soilnames['classes'].get(botnum, None)
 
+        # KSat returned as mm/day
         return dict(soilname=soilname, top=dict(name=topname, usda=int(topnum), sat=sat_top, ssks=ksat_top, ksat=ksat_top * 864e5, fc=fc_top, wp=wp_top),
                     bot=dict(name=botname, usda=int(botnum), sat=sat_bot, ssks=ksat_bot, ksat=ksat_bot * 864e5, fc=fc_bot, wp=wp_bot))
 

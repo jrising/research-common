@@ -89,7 +89,7 @@ class HWSDSoil(GlobalBinaryGrid, StaticFeature):
             if row is not None:
                 return row
 
-        print "Soil Error: soil type not found: " + zstr
+        print("Soil Error: soil type not found: " + zstr)
         return None
 
     def soil_to_texture(self, zstr):
