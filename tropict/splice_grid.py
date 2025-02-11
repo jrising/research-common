@@ -5,6 +5,8 @@ MAX_NCDF_VALUE = 1e6
 # allow blue for oceans
 OVERWRITABLE_COLORS = [[0, 0, 255]] # also white, implicitly
 
+oceanblue = False
+
 scalex = .64  # without vertical stretching height / (2079 / scalex) = 60 / 360
 
 def ntoend(p0):
@@ -34,12 +36,19 @@ def copyover_image(result, ii, o0, o1, values):
     for color in OVERWRITABLE_COLORS:
         blanks = blanks | ((result[ii, span, 0] == color[0]) & (result[ii, span, 1] == color[1]) & (result[ii, span, 2] == color[2]))
     result[ii, np.array(span)[blanks], :] = values[blanks, :]
+    if oceanblue:
+        makeoffwhite = blanks & ((result[ii, span, 0] == 255) & (result[ii, span, 1] == 255) & (result[ii, span, 2] == 255))
+        result[ii, np.array(span)[makeoffwhite], :] = 254
 
 def convert_image(pathin, pathout):
+    global oceanblue
     from PIL import Image
 
     im = Image.open(pathin)
     data = np.asarray(im, dtype=np.uint8)
+
+    if data[0, 0, 0] == 0 and data[0, 0, 1] == 0 and data[0, 0, 2] == 255:
+        oceanblue = True
 
     result = 255 * np.ones((900, 2079, data.shape[2]), dtype=np.uint8)
     convert(data, result, extract_image, dropinitialhori_image, copyover_image)

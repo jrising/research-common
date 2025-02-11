@@ -35,6 +35,25 @@ ConleySEs <- function(reg, df,
     dist_cutoff = 500, lag_cutoff = 5,
     lat_scale = 111, verbose = FALSE, cores = 1, balanced_pnl = FALSE) {
 
+    crossprod.inverse <- function(X) {
+        if(require(corpcor)) {
+            inv <- corpcor::pseudoinverse(crossprod(X))
+        } else if(require(MASS)) {
+            inv <- MASS::ginv(X)
+        } else {
+            inv <- tryCatch(solve(crossprod(X)), error = function(e) e)
+            if(class(inv) == "error") {
+                stop("Matrix is computationally singular. Please install packages 'MASS' or 'corpcor' for pseudoinverse calculations.")
+            }
+        }
+
+        ## Keep column names if they exist
+        if(is.null(colnames(inv)) & !is.null(colnames(X))) {
+            colnames(inv) <- colnames(X)
+            rownames(inv) <- colnames(X)
+        }
+        inv
+    }
 
     #' Iterates over objects
     #'
@@ -138,7 +157,7 @@ ConleySEs <- function(reg, df,
 
     # Generate VCE for only cross-sectional spatial correlation:
     X <- as.matrix(dt[, eval(Xvars), with = FALSE])
-    invXX <- solve(t(X) %*% X) * n
+    invXX <- crossprod.inverse(X) * n
 
     V_spatial <- invXX %*% (XeeX / n) %*% invXX / n
 

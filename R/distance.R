@@ -11,3 +11,4 @@ gcd.slc <- function(long0, lat0, longs, lats) {
     return(d) # Distance in km
 }
 
+## acos(sin(lat0)^2 + cos(lat0)^2*cos(pi / 180)) approx= cos(lat0)o
