@@ -72,10 +72,10 @@ importShapefile <- function(fn, readDBF=TRUE, projection=NULL, zone=NULL,
   }
 
   # Store the primary data and associated attributes
-  main_data <- result_list$data
+  main_data <- as.data.frame(result_list$data)
 
   if (exists("PolyData", result_list)) {
-    attr(main_data, "PolyData") <- result_list$PolyData
+    attr(main_data, "PolyData") <- cbind(PID=1:nrow(result_list$PolyData), result_list$PolyData)
   }
 
   if (!is.null(projection)) {
@@ -97,3 +97,11 @@ importShapefile <- function(fn, readDBF=TRUE, projection=NULL, zone=NULL,
 # Example usage
 # Adjust the filename path below to point to your actual shapefile
 # shapefile_data <- importShapefile("path/to/your/shapefile.shp")
+
+calcCentroid <- function(shp, rollup=3) {
+    PBSmapping::calcCentroid(as.data.frame(shp), rollup=rollup)
+}
+
+calcArea <- function(shp, rollup=3) {
+    PBSmapping::calcArea(as.data.frame(shp), rollup=rollup)
+}
